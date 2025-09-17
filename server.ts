@@ -29,13 +29,12 @@ app.get('/', (req: Request, res: Response) => {
     res.send(`
         <html>
         <body>
-            <h2>Do you want to commit README.md and trigger deployment?</h2>
+            <h2>Commit README.md and trigger deployment</h2>
             <form method="POST">
                 <label for="repoName">Repository Name:</label>
                 <input type="text" id="repoName" name="repoName" required />
                 <br/><br/>
-                <button type="submit" name="confirm" value="yes">Yes</button>
-                <button type="submit" name="confirm" value="no">No</button>
+                <button type="submit">Commit</button>
             </form>
         </body>
         </html>
@@ -43,12 +42,9 @@ app.get('/', (req: Request, res: Response) => {
 })
 
 app.post('/', async (req: Request, res: Response) => {
-    const { repoName, confirm } = req.body
+    const { repoName } = req.body
     if (typeof repoName !== 'string' || repoName.trim() === '') {
         return res.status(400).send('Invalid repository name.')
-    }
-    if (confirm !== 'yes') {
-        return res.send('Commit cancelled.')
     }
     const owner = 'The-Matrix-Labs'
     const repo = repoName.trim()
