@@ -25,17 +25,15 @@ app.use(limiter)
 app.use(express.urlencoded({ extended: true }))
 
 app.get('/', (req: Request, res: Response) => {
-    const { repoName } = req.query
-    if (typeof repoName !== 'string' || repoName.trim() === '') {
-        return res.status(400).send('Invalid repository name.')
-    }
-    // Serve confirmation HTML
+    // Serve confirmation HTML with repo name input
     res.send(`
         <html>
         <body>
             <h2>Do you want to commit README.md and trigger deployment?</h2>
             <form method="POST">
-                <input type="hidden" name="repoName" value="${repoName}" />
+                <label for="repoName">Repository Name:</label>
+                <input type="text" id="repoName" name="repoName" required />
+                <br/><br/>
                 <button type="submit" name="confirm" value="yes">Yes</button>
                 <button type="submit" name="confirm" value="no">No</button>
             </form>
