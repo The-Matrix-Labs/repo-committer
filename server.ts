@@ -1,4 +1,6 @@
-import express from 'express'
+import express, { Request, Response } from 'express'
+// Import Node.js Buffer type
+import { Buffer } from 'buffer'
 import { Octokit } from '@octokit/rest'
 import rateLimit from 'express-rate-limit'
 import { RequestError } from '@octokit/request-error' // Import Octokit RequestError for error handling
@@ -13,61 +15,74 @@ const octokit = new Octokit({
 
 // Rate limiter to prevent abuse
 const limiter = rateLimit({
-    windowMs: 60 * 1000, // 1 minutes
-    max: 10, // Limit each IP to 10 requests per windowMs
+    windowMs: 60 * 1000, // 1 minute
+    max: 5, // Limit each IP to 5 requests per windowMs
 })
 
 // Apply rate limiting middleware
 app.use(limiter)
 
-app.get('/', async (req, res) => {
-    const { repoName } = req.query
+app.use(express.urlencoded({ extended: true }))
 
-    // Validate repository name
+app.get('/', (req: Request, res: Response) => {
+    const { repoName } = req.query
     if (typeof repoName !== 'string' || repoName.trim() === '') {
         return res.status(400).send('Invalid repository name.')
     }
+    // Serve confirmation HTML
+    res.send(`
+        <html>
+        <body>
+            <h2>Do you want to commit README.md and trigger deployment?</h2>
+            <form method="POST">
+                <input type="hidden" name="repoName" value="${repoName}" />
+                <button type="submit" name="confirm" value="yes">Yes</button>
+                <button type="submit" name="confirm" value="no">No</button>
+            </form>
+        </body>
+        </html>
+    `)
+})
 
+app.post('/', async (req: Request, res: Response) => {
+    const { repoName, confirm } = req.body
+    if (typeof repoName !== 'string' || repoName.trim() === '') {
+        return res.status(400).send('Invalid repository name.')
+    }
+    if (confirm !== 'yes') {
+        return res.send('Commit cancelled.')
+    }
     const owner = 'The-Matrix-Labs'
     const repo = repoName.trim()
-
     try {
-        // Attempt to get the README file
         const { data } = await octokit.repos.getContent({
             owner,
             repo,
             path: 'README.md',
         })
-
         if (!('content' in data) || typeof data.content !== 'string') {
             throw new Error('README.md content not found.')
         }
-
         let content = Buffer.from(data.content, 'base64').toString('utf-8')
-        content += ' ' // Add a space to the content
-
-        // Update or create README.md
+        content += ' '
         await octokit.repos.createOrUpdateFileContents({
             owner,
             repo,
             path: 'README.md',
             message: 'Update README.md',
             content: Buffer.from(content).toString('base64'),
-            sha: data.sha, // Needed if updating the file
+            sha: data.sha,
         })
-
         res.send('README updated successfully.')
-    } catch (error) {
-        if (error instanceof RequestError && error.status === 404) {
-            // If README does not exist, create it
+    } catch (error: unknown) {
+        if (error instanceof RequestError && (error as RequestError).status === 404) {
             await octokit.repos.createOrUpdateFileContents({
                 owner,
                 repo,
                 path: 'README.md',
                 message: 'Create README.md',
-                content: Buffer.from(' ').toString('base64'), // New README with a space
+                content: Buffer.from(' ').toString('base64'),
             })
-
             res.send('README created successfully.')
         } else {
             res.status(500).send('Error accessing GitHub API.')
