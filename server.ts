@@ -1,28 +1,38 @@
 import express, { Request, Response } from 'express'
-// Import Node.js Buffer type
-import { Buffer } from 'buffer'
-import { Octokit } from '@octokit/rest'
+import dotenv from 'dotenv'
 import rateLimit from 'express-rate-limit'
-import { RequestError } from '@octokit/request-error' // Import Octokit RequestError for error handling
+import { GitHubService, TelegramService, WebhookService } from './src/services'
+
+// Load environment variables
+dotenv.config()
 
 const app = express()
-const port = 3000
+const port = process.env.PORT || 3000
 
-// GitHub API client setup
-const octokit = new Octokit({
-    auth: process.env.GITHUB_TOKEN, // Set your GitHub token in environment variables
-})
+// Initialize services
+const githubService = new GitHubService(process.env.GITHUB_TOKEN || '')
+const telegramService = new TelegramService(process.env.TELEGRAM_BOT_TOKEN || '', process.env.TELEGRAM_GROUP_ID || '')
+const webhookService = new WebhookService(telegramService)
 
-// Rate limiter to prevent abuse
+// Rate limiter to prevent abuse on GitHub endpoints
 const limiter = rateLimit({
     windowMs: 60 * 1000, // 1 minute
     max: 5, // Limit each IP to 5 requests per windowMs
 })
 
-// Apply rate limiting middleware
-app.use(limiter)
-
+// Parse JSON bodies
+app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
+
+// Health check endpoint
+app.get('/health', (req: Request, res: Response) => {
+    res.status(200).json({
+        status: 'ok',
+        timestamp: new Date().toISOString(),
+        uptime: process.uptime(),
+        environment: process.env.NODE_ENV || 'development',
+    })
+})
 
 app.get('/', (req: Request, res: Response) => {
     // Serve confirmation HTML with repo name input
@@ -41,47 +51,26 @@ app.get('/', (req: Request, res: Response) => {
     `)
 })
 
-app.post('/', async (req: Request, res: Response) => {
+app.post('/', limiter, async (req: Request, res: Response) => {
     const { repoName } = req.body
     if (typeof repoName !== 'string' || repoName.trim() === '') {
         return res.status(400).send('Invalid repository name.')
     }
     const owner = 'The-Matrix-Labs'
     const repo = repoName.trim()
+
     try {
-        const { data } = await octokit.repos.getContent({
-            owner,
-            repo,
-            path: 'README.md',
-        })
-        if (!('content' in data) || typeof data.content !== 'string') {
-            throw new Error('README.md content not found.')
-        }
-        let content = Buffer.from(data.content, 'base64').toString('utf-8')
-        content += ' '
-        await octokit.repos.createOrUpdateFileContents({
-            owner,
-            repo,
-            path: 'README.md',
-            message: 'Update README.md',
-            content: Buffer.from(content).toString('base64'),
-            sha: data.sha,
-        })
-        res.send('README updated successfully.')
+        const message = await githubService.updateReadme(owner, repo)
+        res.send(message)
     } catch (error: unknown) {
-        if (error instanceof RequestError && (error as RequestError).status === 404) {
-            await octokit.repos.createOrUpdateFileContents({
-                owner,
-                repo,
-                path: 'README.md',
-                message: 'Create README.md',
-                content: Buffer.from(' ').toString('base64'),
-            })
-            res.send('README created successfully.')
-        } else {
-            res.status(500).send('Error accessing GitHub API.')
-        }
+        console.error('Error updating README:', error)
+        res.status(500).send('Error accessing GitHub API.')
     }
+})
+
+// Webhook endpoint
+app.post('/webhook', async (req: Request, res: Response) => {
+    await webhookService.handleWebhook(req, res)
 })
 
 app.listen(port, () => {
