@@ -1,7 +1,7 @@
 import express, { Request, Response } from 'express'
 import dotenv from 'dotenv'
 import rateLimit from 'express-rate-limit'
-import { GitHubService, TelegramService, WebhookService } from './src/services'
+import { GitHubService, TelegramService, WebhookService } from './services'
 
 // Load environment variables
 dotenv.config()
