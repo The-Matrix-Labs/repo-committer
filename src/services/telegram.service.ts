@@ -40,7 +40,8 @@ export class TelegramService {
 
             message += `<b>💰 Price Details:</b>\n`
             message += `• Currency: <code>${data.currency || 'N/A'}</code>\n`
-            message += `• Total: <code>${data.total_price || 0}</code>\n`
+            const formattedPrice = data.total_price ? data.total_price.toLocaleString('en-IN') : '0'
+            message += `• Total: <code>${formattedPrice}</code>\n`
             message += `• Items: ${data.item_count || 0}\n\n`
 
             message += `<b>📱 Contact Info:</b>\n`
@@ -51,12 +52,8 @@ export class TelegramService {
             message += `<b>🏪 Source:</b> ${data.source_name || 'N/A'}\n`
             message += `<b>🕒 Time:</b> ${timestamp}\n`
 
-            if (data.cart_attributes?.landing_page_url) {
-                message += `\n<b>🔗 Landing Page:</b>\n${data.cart_attributes.landing_page_url}\n`
-            }
-
             if (data.cart_attributes?.ipv4_address) {
-                message += `<b>🌐 IP:</b> <code>${data.cart_attributes.ipv4_address}</code>\n`
+                message += `\n<b>🌐 IP:</b> <code>${data.cart_attributes.ipv4_address}</code>\n`
             }
 
             return message
