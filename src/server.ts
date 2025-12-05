@@ -91,23 +91,6 @@ app.post('/webhook', async (req: Request, res: Response) => {
     await webhookService.handleWebhook(req, res)
 })
 
-// Bot control endpoints
-app.post('/bot/toggle', (req: Request, res: Response) => {
-    isBotActive = !isBotActive
-    res.json({
-        success: true,
-        botActive: isBotActive,
-        message: isBotActive ? 'Bot enabled ✅' : 'Bot disabled ⏸️',
-    })
-})
-
-app.get('/bot/status', (req: Request, res: Response) => {
-    res.json({
-        botActive: isBotActive,
-        status: isBotActive ? 'enabled ✅' : 'disabled ⏸️',
-    })
-})
-
 app.listen(port, () => {
     console.log(`Server running on http://localhost:${port}`)
 })
