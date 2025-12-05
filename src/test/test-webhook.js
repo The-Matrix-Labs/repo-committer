@@ -43,4 +43,4 @@ async function runTests() {
     console.log('='.repeat(60))
 }
 
-// runTests()
+runTests()
