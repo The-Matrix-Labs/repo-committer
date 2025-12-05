@@ -22,6 +22,7 @@ const webhookService = new WebhookService(telegramService, cartService)
 const callbackService = new CallbackService(telegramService, cartService)
 
 // Initialize and launch Telegram bot
+let isBotActive = false
 const botService = new TelegramBotService(process.env.TELEGRAM_BOT_TOKEN || '', callbackService)
 botService.launch()
 
@@ -81,7 +82,30 @@ app.post('/', limiter, async (req: Request, res: Response) => {
 
 // Webhook endpoint
 app.post('/webhook', async (req: Request, res: Response) => {
+    if (!isBotActive) {
+        return res.status(200).json({
+            success: true,
+            message: 'Bot is currently disabled. Webhook ignored.',
+        })
+    }
     await webhookService.handleWebhook(req, res)
+})
+
+// Bot control endpoints
+app.post('/bot/toggle', (req: Request, res: Response) => {
+    isBotActive = !isBotActive
+    res.json({
+        success: true,
+        botActive: isBotActive,
+        message: isBotActive ? 'Bot enabled ✅' : 'Bot disabled ⏸️',
+    })
+})
+
+app.get('/bot/status', (req: Request, res: Response) => {
+    res.json({
+        botActive: isBotActive,
+        status: isBotActive ? 'enabled ✅' : 'disabled ⏸️',
+    })
 })
 
 app.listen(port, () => {
