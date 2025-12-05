@@ -22,10 +22,13 @@ const webhookService = new WebhookService(telegramService, cartService)
 const callbackService = new CallbackService(telegramService, cartService)
 
 // Initialize and launch Telegram bot
-let isBotActive = false
+let isBotActive = process.env.BOT_ACTIVE === 'true'
 const botService = new TelegramBotService(process.env.TELEGRAM_BOT_TOKEN || '', callbackService)
 if (isBotActive) {
     botService.launch()
+    console.log('🤖 Bot is ACTIVE')
+} else {
+    console.log('⏸️  Bot is DISABLED (set BOT_ACTIVE=true in .env to enable)')
 }
 
 // Rate limiter to prevent abuse on GitHub endpoints
