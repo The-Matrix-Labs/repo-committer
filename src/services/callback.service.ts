@@ -16,6 +16,13 @@ export class CallbackService {
         const messageId = callbackQuery.message.message_id
         const chatId = callbackQuery.message.chat.id
 
+        // Answer callback query immediately to prevent timeout
+        try {
+            await ctx?.answerCbQuery()
+        } catch (e) {
+            // Ignore if already answered or expired
+        }
+
         try {
             // Handle status update
             if (callbackData.startsWith('status_')) {
@@ -44,18 +51,10 @@ export class CallbackService {
                         parse_mode: 'HTML',
                         reply_markup: message.reply_markup,
                     })
-                    await ctx.answerCbQuery('Back to main menu')
-                } else {
-                    await ctx?.answerCbQuery('Cart not found')
                 }
-            } else {
-                await ctx?.answerCbQuery('Unknown action')
             }
         } catch (error: any) {
             console.error('❌ Error handling callback:', error.message)
-            if (ctx) {
-                await ctx.answerCbQuery('Error occurred').catch(() => {})
-            }
         }
     }
 
@@ -120,7 +119,6 @@ export class CallbackService {
                     parse_mode: 'HTML',
                     reply_markup: keyboard,
                 })
-                await ctx.answerCbQuery('Status options loaded')
             }
         } catch (error: any) {
             console.error('❌ Error showing status options:', error.message)
@@ -138,7 +136,6 @@ export class CallbackService {
                 parse_mode: 'HTML',
                 reply_markup: message.reply_markup,
             })
-            await ctx.answerCbQuery(`Status updated to: ${status}`)
         }
     }
 
