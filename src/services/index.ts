@@ -1,3 +1,6 @@
 export { GitHubService } from './github.service'
 export { TelegramService } from './telegram.service'
 export { WebhookService } from './webhook.service'
+export { DatabaseService } from './database.service'
+export { CartService } from './cart.service'
+export { CallbackService } from './callback.service'

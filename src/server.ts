@@ -1,7 +1,8 @@
 import express, { Request, Response } from 'express'
 import dotenv from 'dotenv'
 import rateLimit from 'express-rate-limit'
-import { GitHubService, TelegramService, WebhookService } from './services'
+import { GitHubService, TelegramService, WebhookService, DatabaseService, CartService, CallbackService } from './services'
+import { TelegramBotService } from './services/bot.service'
 
 // Load environment variables
 dotenv.config()
@@ -9,10 +10,20 @@ dotenv.config()
 const app = express()
 const port = process.env.PORT || 3000
 
+// Initialize database
+const databaseService = new DatabaseService(process.env.MONGODB_URI || 'mongodb+srv://amansingh9723chauhan_db_user:IxWlNtKBHHpiQ8VJ@cluster0.mgnrbot.mongodb.net/')
+databaseService.connect()
+
 // Initialize services
 const githubService = new GitHubService(process.env.GITHUB_TOKEN || '')
 const telegramService = new TelegramService(process.env.TELEGRAM_BOT_TOKEN || '', process.env.TELEGRAM_GROUP_ID || '')
-const webhookService = new WebhookService(telegramService)
+const cartService = new CartService()
+const webhookService = new WebhookService(telegramService, cartService)
+const callbackService = new CallbackService(telegramService, cartService)
+
+// Initialize and launch Telegram bot
+const botService = new TelegramBotService(process.env.TELEGRAM_BOT_TOKEN || '', callbackService)
+botService.launch()
 
 // Rate limiter to prevent abuse on GitHub endpoints
 const limiter = rateLimit({
