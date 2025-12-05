@@ -91,6 +91,13 @@ app.post('/webhook', async (req: Request, res: Response) => {
     await webhookService.handleWebhook(req, res)
 })
 
+app.get('/bot/status', (req: Request, res: Response) => {
+    res.json({
+        botActive: isBotActive,
+        status: isBotActive ? 'enabled ✅' : 'disabled ⏸️',
+    })
+})
+
 app.listen(port, () => {
     console.log(`Server running on http://localhost:${port}`)
 })

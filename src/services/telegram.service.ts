@@ -120,7 +120,6 @@ export class TelegramService {
 
             // ============ ITEM DETAILS ============
             message += `<b>🛍️ ITEM DETAILS</b>\n`
-            message += `━━━━━━━━━━━━━━━━━━━━━━\n`
             if (data.items && data.items.length > 0) {
                 data.items.forEach((item: any, index: number) => {
                     message += `${index + 1}. <b>${item.name || item.title}</b>\n`
@@ -144,7 +143,6 @@ export class TelegramService {
 
             // ============ CUSTOMER DETAILS ============
             message += `<b>👤 CUSTOMER DETAILS</b>\n`
-            message += `━━━━━━━━━━━━━━━━━━━━━━\n`
             if (data.first_name || data.last_name) {
                 message += `• Name: ${data.first_name || ''} ${data.last_name || ''}\n`
             }
@@ -171,7 +169,6 @@ export class TelegramService {
 
             // ============ CART METADATA ============
             message += `<b>⚙️ CART METADATA</b>\n`
-            message += `━━━━━━━━━━━━━━━━━━━━━━\n`
 
             // Applied Rules
             message += `<b>Applied Rules:</b>\n`
@@ -185,7 +182,6 @@ export class TelegramService {
 
             // ============ PAYMENT SUMMARY ============
             message += `<b>💰 PAYMENT SUMMARY</b>\n`
-            message += `━━━━━━━━━━━━━━━━━━━━━━\n`
 
             // Calculate subtotal (total_price + total_discount - shipping if needed)
             const subtotal = data.total_price || 0
@@ -207,12 +203,10 @@ export class TelegramService {
 
             // ============ NOTES ============
             message += `<b>📝 NOTES</b>\n`
-            message += `━━━━━━━━━━━━━━━━━━━━━━\n`
             message += `<i>No notes yet. Click "Add Note" to add one.</i>\n\n`
 
             // ============ CART DETAILS ============
             message += `<b>📋 CART DETAILS</b>\n`
-            message += `━━━━━━━━━━━━━━━━━━━━━━\n`
             message += `• Cart ID: <code>${data.cart_id}</code>\n`
             message += `• Stage: ${data.latest_stage || 'N/A'}\n`
             if (data.updated_at) {

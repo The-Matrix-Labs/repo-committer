@@ -155,7 +155,7 @@ export class CallbackService {
         message += `<b>📊 Status:</b> ${statusEmoji[cart.status]} ${cart.status}\n\n`
 
         // Items
-        message += `<b>🛍️ ITEM DETAILS</b>\n━━━━━━━━━━━━━━━━━━━━━━\n`
+        message += `<b>🛍️ ITEM DETAILS</b>\n`
         if (data.items && data.items.length > 0) {
             data.items.forEach((item: any, index: number) => {
                 message += `${index + 1}. <b>${item.name || item.title}</b>\n`
@@ -166,16 +166,16 @@ export class CallbackService {
         }
 
         // Customer
-        message += `<b>👤 CUSTOMER DETAILS</b>\n━━━━━━━━━━━━━━━━━━━━━━\n`
+        message += `<b>👤 CUSTOMER DETAILS</b>\n`
         message += `• Name: ${cart.customer_name || 'N/A'}\n`
         message += `• Phone: <code>${cart.phone_number || 'N/A'}</code>\n\n`
 
         // Payment
-        message += `<b>💰 PAYMENT SUMMARY</b>\n━━━━━━━━━━━━━━━━━━━━━━\n`
+        message += `<b>💰 PAYMENT SUMMARY</b>\n`
         message += `• Total: ₹${cart.total_price?.toLocaleString('en-IN') || 0}\n\n`
 
         // Notes
-        message += `<b>📝 NOTES</b>\n━━━━━━━━━━━━━━━━━━━━━━\n`
+        message += `<b>📝 NOTES</b>\n`
         if (cart.notes && cart.notes.trim()) {
             message += `${cart.notes}\n\n`
         } else {
@@ -183,7 +183,7 @@ export class CallbackService {
         }
 
         // Cart Details
-        message += `<b>📋 CART DETAILS</b>\n━━━━━━━━━━━━━━━━━━━━━━\n`
+        message += `<b>📋 CART DETAILS</b>\n`
         message += `• Cart ID: <code>${cart.cart_id}</code>\n`
         message += `• Stage: ${cart.latest_stage || 'N/A'}\n`
 
