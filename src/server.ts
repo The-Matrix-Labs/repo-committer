@@ -24,7 +24,9 @@ const callbackService = new CallbackService(telegramService, cartService)
 // Initialize and launch Telegram bot
 let isBotActive = false
 const botService = new TelegramBotService(process.env.TELEGRAM_BOT_TOKEN || '', callbackService)
-botService.launch()
+if (isBotActive) {
+    botService.launch()
+}
 
 // Rate limiter to prevent abuse on GitHub endpoints
 const limiter = rateLimit({
