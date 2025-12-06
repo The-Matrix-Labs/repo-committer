@@ -115,32 +115,6 @@ export class TelegramService {
         if (data.cart_id) {
             let message = `<b>🛒 New Cart Event</b>\n\n`
 
-            // ============ STATUS ============
-            message += `<b>📊 Status:</b> 🔴 Not Contacted\n\n`
-
-            // ============ ITEM DETAILS ============
-            message += `<b>🛍️ ITEM DETAILS</b>\n`
-            if (data.items && data.items.length > 0) {
-                data.items.forEach((item: any, index: number) => {
-                    message += `${index + 1}. <b>${item.name || item.title}</b>\n`
-                    message += `   • Quantity: ${item.quantity || 1}\n`
-                    message += `   • Price: ₹${item.price?.toLocaleString('en-IN') || 'N/A'}\n`
-                    if (item.sku) {
-                        message += `   • SKU: ${item.sku}\n`
-                    }
-                    message += `\n`
-                })
-            } else if (data.item_name_list && data.item_name_list.length > 0) {
-                data.item_name_list.forEach((name: string, index: number) => {
-                    message += `${index + 1}. <b>${name}</b>\n`
-                    message += `   • Quantity: 1\n`
-                    if (data.item_price_list && data.item_price_list[index]) {
-                        message += `   • Price: ₹${parseFloat(data.item_price_list[index]).toLocaleString('en-IN')}\n`
-                    }
-                    message += `\n`
-                })
-            }
-
             // ============ CUSTOMER DETAILS ============
             message += `<b>👤 CUSTOMER DETAILS</b>\n`
             if (data.first_name || data.last_name) {
@@ -166,6 +140,29 @@ export class TelegramService {
                 message += `Phone: <code>${data.shipping_address.phone || ''}</code>\n`
             }
             message += `\n`
+
+            // ============ ITEM DETAILS ============
+            message += `<b>🛍️ ITEM DETAILS</b>\n`
+            if (data.items && data.items.length > 0) {
+                data.items.forEach((item: any, index: number) => {
+                    message += `${index + 1}. <b>${item.name || item.title}</b>\n`
+                    message += `   • Quantity: ${item.quantity || 1}\n`
+                    message += `   • Price: ₹${item.price?.toLocaleString('en-IN') || 'N/A'}\n`
+                    if (item.sku) {
+                        message += `   • SKU: ${item.sku}\n`
+                    }
+                    message += `\n`
+                })
+            } else if (data.item_name_list && data.item_name_list.length > 0) {
+                data.item_name_list.forEach((name: string, index: number) => {
+                    message += `${index + 1}. <b>${name}</b>\n`
+                    message += `   • Quantity: 1\n`
+                    if (data.item_price_list && data.item_price_list[index]) {
+                        message += `   • Price: ₹${parseFloat(data.item_price_list[index]).toLocaleString('en-IN')}\n`
+                    }
+                    message += `\n`
+                })
+            }
 
             // ============ CART METADATA ============
             message += `<b>⚙️ CART METADATA</b>\n`
@@ -201,10 +198,6 @@ export class TelegramService {
             }
             message += `\n`
 
-            // ============ NOTES ============
-            message += `<b>📝 NOTES</b>\n`
-            message += `<i>No notes yet. Click "Add Note" to add one.</i>\n\n`
-
             // ============ CART DETAILS ============
             message += `<b>📋 CART DETAILS</b>\n`
             message += `• Cart ID: <code>${data.cart_id}</code>\n`
@@ -216,6 +209,14 @@ export class TelegramService {
                 message += `• Date: ${dateStr}\n`
                 message += `• Time: ${timeStr}\n`
             }
+            message += `\n`
+
+            // ============ STATUS ============
+            message += `<b>📊 Status:</b> 🔴 Not Contacted\n\n`
+
+            // ============ NOTES ============
+            message += `<b>📝 NOTES</b>\n`
+            message += `<i>No notes yet. Click "Add Note" to add one.</i>\n\n`
 
             // Create inline keyboard buttons if phone number exists
             const buttons: TelegramMessage = {

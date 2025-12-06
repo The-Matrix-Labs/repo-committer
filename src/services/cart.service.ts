@@ -5,15 +5,32 @@ export class CartService {
         try {
             const cartData = {
                 cart_id: data.cart_id,
-                phone_number: data.phone_number,
-                customer_name: data.first_name && data.last_name ? `${data.first_name} ${data.last_name}` : undefined,
-                email: data.email,
-                total_price: data.total_price,
-                items: data.items,
-                shipping_address: data.shipping_address,
                 latest_stage: data.latest_stage,
+
+                // Item Details
+                items: data.items,
+                item_name_list: data.item_name_list,
+                item_price_list: data.item_price_list,
+
+                // Customer Details
+                first_name: data.first_name,
+                last_name: data.last_name,
+                email: data.email,
+                phone_number: data.phone_number,
+                phone_verified: data.phone_verified,
+                shipping_address: data.shipping_address,
+
+                // Cart Metadata
+                shipping_price: data.shipping_price,
+                rtoPredict: data.rtoPredict,
+
+                // Payment Summary
+                total_price: data.total_price,
+                tax: data.tax,
+                payment_status: data.payment_status,
+
+                // Cart Details
                 updated_at: data.updated_at ? new Date(data.updated_at) : undefined,
-                raw_data: data,
             }
 
             const cart = await Cart.findOneAndUpdate({ cart_id: data.cart_id }, cartData, {

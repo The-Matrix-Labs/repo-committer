@@ -1,4 +1,23 @@
 export const type1 = {
+    cart_id: '693298dff686895a3e33f582',
+    latest_stage: 'PHONE_RECEIVED',
+    currency: 'INR',
+    item_count: 1,
+    source_name: 'fastrr',
+    total_price: 3299,
+    phone_number: '9151521879',
+    phone_verified: false,
+    shipping_price: 0,
+    total_discount: 0,
+    tax: 0,
+    cart_attributes: {
+        shopifyCartToken: 'hWN61dxW0mJw96GlDi3NyVBh?key=3ada625cda04e788a7892d97572fb0ec',
+        landing_page_url: 'https://www.hestern.in/?_ab=0&_fd=0&_sc=1',
+        ipv4_address: '110.226.218.6',
+    },
+}
+
+export const type2 = {
     rtoPredict: 'low',
     cart_id: '6932795d75348b363d836d1c',
     cart_token: 'hWN61dxW0mJw96GlDi3NyVBh?key=3ada625cda04e788a7892d97572fb0ec',
@@ -70,7 +89,7 @@ export const type1 = {
     },
 }
 
-export const type2 = {
+export const type3 = {
     cart_id: '6932967c75348b363d83cf13',
     cart_token: 'hWN62X6Q9PzQh0VUptGClri0?key=3f8cbf0b18407fb63f1c913bca263b00',
     latest_stage: 'PHONE_RECEIVED',
@@ -126,21 +145,11 @@ export const type2 = {
     },
 }
 
-export const type3 = {
-    cart_id: '693298dff686895a3e33f582',
-    latest_stage: 'PHONE_RECEIVED',
-    currency: 'INR',
-    item_count: 1,
-    source_name: 'fastrr',
-    total_price: 3299,
-    phone_number: '9151521879',
-    phone_verified: false,
-    shipping_price: 0,
-    total_discount: 0,
-    tax: 0,
-    cart_attributes: {
-        shopifyCartToken: 'hWN61dxW0mJw96GlDi3NyVBh?key=3ada625cda04e788a7892d97572fb0ec',
-        landing_page_url: 'https://www.hestern.in/?_ab=0&_fd=0&_sc=1',
-        ipv4_address: '110.226.218.6',
-    },
-}
+/**
+ * event phone recieved (PR)
+ * event abandon cart (AC)
+ * 1. PR -> AC
+ * 2. AC
+ * 3. PR
+ * 4. AC -> PR
+ */

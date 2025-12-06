@@ -140,10 +140,105 @@ export class CallbackService {
     }
 
     private async formatCartMessage(cart: any): Promise<any> {
-        const data = cart.raw_data
         let message = `<b>🛒 Cart Event</b>\n\n`
 
-        // Status indicator
+        // ============ CUSTOMER DETAILS ============
+        message += `<b>👤 CUSTOMER DETAILS</b>\n`
+        if (cart.first_name || cart.last_name) {
+            message += `• Name: ${cart.first_name || ''} ${cart.last_name || ''}\n`
+        }
+        if (cart.email) {
+            message += `• Email: ${cart.email}\n`
+        }
+        message += `• Phone: <code>${cart.phone_number || 'N/A'}</code>\n`
+        if (cart.phone_verified !== undefined) {
+            message += `• Phone Verified: ${cart.phone_verified ? '✅ Yes' : '❌ No'}\n`
+        }
+
+        if (cart.shipping_address) {
+            message += `\n<b>📦 Shipping Address:</b>\n`
+            message += `${cart.shipping_address.name || ''}\n`
+            message += `${cart.shipping_address.address1 || ''}\n`
+            if (cart.shipping_address.address2) {
+                message += `${cart.shipping_address.address2}\n`
+            }
+            message += `${cart.shipping_address.city || ''}, ${cart.shipping_address.state || ''} - ${cart.shipping_address.zip || ''}\n`
+            message += `${cart.shipping_address.country || ''}\n`
+            message += `Phone: <code>${cart.shipping_address.phone || ''}</code>\n`
+        }
+        message += `\n`
+
+        // ============ ITEM DETAILS ============
+        message += `<b>🛍️ ITEM DETAILS</b>\n`
+        if (cart.items && cart.items.length > 0) {
+            cart.items.forEach((item: any, index: number) => {
+                message += `${index + 1}. <b>${item.name || item.title}</b>\n`
+                message += `   • Quantity: ${item.quantity || 1}\n`
+                message += `   • Price: ₹${item.price?.toLocaleString('en-IN') || 'N/A'}\n`
+                if (item.sku) {
+                    message += `   • SKU: ${item.sku}\n`
+                }
+                message += `\n`
+            })
+        } else if (cart.item_name_list && cart.item_name_list.length > 0) {
+            cart.item_name_list.forEach((name: string, index: number) => {
+                message += `${index + 1}. <b>${name}</b>\n`
+                message += `   • Quantity: 1\n`
+                if (cart.item_price_list && cart.item_price_list[index]) {
+                    message += `   • Price: ₹${parseFloat(cart.item_price_list[index]).toLocaleString('en-IN')}\n`
+                }
+                message += `\n`
+            })
+        }
+
+        // ============ CART METADATA ============
+        message += `<b>⚙️ CART METADATA</b>\n`
+
+        // Applied Rules
+        message += `<b>Applied Rules:</b>\n`
+        if (cart.shipping_price !== undefined) {
+            message += `• Shipping Charge: ₹${cart.shipping_price}\n`
+        }
+        if (cart.rtoPredict) {
+            message += `• RTO Predict: ${cart.rtoPredict}\n`
+        }
+        message += `\n`
+
+        // ============ PAYMENT SUMMARY ============
+        message += `<b>💰 PAYMENT SUMMARY</b>\n`
+
+        // Calculate subtotal (total_price + total_discount - shipping if needed)
+        const subtotal = cart.total_price || 0
+        const tax = cart.tax || 0
+
+        message += `• Subtotal: ₹${subtotal.toLocaleString('en-IN')}\n`
+
+        if (tax > 0) {
+            message += `• Tax: ₹${tax.toLocaleString('en-IN')}\n`
+        }
+
+        const finalAmount = subtotal
+        message += `• <b>Total Amount: ₹${finalAmount.toLocaleString('en-IN')}</b>\n`
+
+        if (cart.payment_status) {
+            message += `• Payment Status: ${cart.payment_status}\n`
+        }
+        message += `\n`
+
+        // ============ CART DETAILS ============
+        message += `<b>📋 CART DETAILS</b>\n`
+        message += `• Cart ID: <code>${cart.cart_id}</code>\n`
+        message += `• Stage: ${cart.latest_stage || 'N/A'}\n`
+        if (cart.updated_at) {
+            const updateDate = new Date(cart.updated_at)
+            const dateStr = updateDate.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' })
+            const timeStr = updateDate.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata' })
+            message += `• Date: ${dateStr}\n`
+            message += `• Time: ${timeStr}\n`
+        }
+        message += `\n`
+
+        // ============ STATUS ============
         const statusEmoji: any = {
             'Not Contacted': '🔴',
             'Called and Converted': '✅',
@@ -151,27 +246,7 @@ export class CallbackService {
         }
         message += `<b>📊 Status:</b> ${statusEmoji[cart.status]} ${cart.status}\n\n`
 
-        // Items
-        message += `<b>🛍️ ITEM DETAILS</b>\n`
-        if (data.items && data.items.length > 0) {
-            data.items.forEach((item: any, index: number) => {
-                message += `${index + 1}. <b>${item.name || item.title}</b>\n`
-                message += `   • Quantity: ${item.quantity || 1}\n`
-                message += `   • Price: ₹${item.price?.toLocaleString('en-IN') || 'N/A'}\n`
-                message += `\n`
-            })
-        }
-
-        // Customer
-        message += `<b>👤 CUSTOMER DETAILS</b>\n`
-        message += `• Name: ${cart.customer_name || 'N/A'}\n`
-        message += `• Phone: <code>${cart.phone_number || 'N/A'}</code>\n\n`
-
-        // Payment
-        message += `<b>💰 PAYMENT SUMMARY</b>\n`
-        message += `• Total: ₹${cart.total_price?.toLocaleString('en-IN') || 0}\n\n`
-
-        // Notes
+        // ============ NOTES ============
         message += `<b>📝 NOTES</b>\n`
         if (cart.notes && cart.notes.trim()) {
             message += `${cart.notes}\n\n`
@@ -179,11 +254,7 @@ export class CallbackService {
             message += `<i>No notes yet. Click "Add Note" to add one.</i>\n\n`
         }
 
-        // Cart Details
-        message += `<b>📋 CART DETAILS</b>\n`
-        message += `• Cart ID: <code>${cart.cart_id}</code>\n`
-        message += `• Stage: ${cart.latest_stage || 'N/A'}\n`
-
+        // Create inline keyboard buttons if phone number exists
         const phoneNumber = cart.phone_number?.replace(/[^0-9]/g, '')
         const formattedPhone = phoneNumber?.startsWith('91') ? phoneNumber : `91${phoneNumber}`
 
