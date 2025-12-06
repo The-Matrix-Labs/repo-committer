@@ -29,17 +29,45 @@ async function runTests() {
     console.log('🚀 Starting webhook tests...\n')
     console.log('Make sure the server is running on http://localhost:8080\n')
 
-    // Wait a bit between requests
-    await testWebhook('Type 1 (Full Order with Shipping)', phoneEnteredEventData)
-    await new Promise(resolve => setTimeout(resolve, 2000))
+    console.log('🧪 Testing all 4 scenarios for duplicate prevention:\n')
 
-    await testWebhook('Type 2 (Multiple Items)', abandonCartEventData)
-    await new Promise(resolve => setTimeout(resolve, 2000))
+    // Scenario 1: PR -> AC (Phone Received first, then Abandon Cart)
+    console.log('\n🟢 SCENARIO 1: Phone Received -> Abandon Cart (Update message)')
+    const cart1 = { ...phoneEnteredEventData, cart_id: 'test_cart_scenario_1' }
+    const cart1AC = { ...abandonCartEventData, cart_id: 'test_cart_scenario_1' }
+    await testWebhook('Scenario 1 - Phone Received', cart1)
+    await new Promise(resolve => setTimeout(resolve, 30_000))
+    await testWebhook('Scenario 1 - Abandon Cart (Should UPDATE)', cart1AC)
+    await new Promise(resolve => setTimeout(resolve, 30_000))
 
-    await testWebhook('Type 3 (Minimal Cart)', abandonCartWithoutAddressEventData)
+    // Scenario 2: AC only (Abandon Cart first and only)
+    console.log('\n🟢 SCENARIO 2: Abandon Cart Only (New message)')
+    const cart2 = { ...abandonCartEventData, cart_id: 'test_cart_scenario_2' }
+    await testWebhook('Scenario 2 - Abandon Cart Only', cart2)
+    await new Promise(resolve => setTimeout(resolve, 30_000))
+
+    // Scenario 3: PR only (Phone Received first and only)
+    console.log('\n🟢 SCENARIO 3: Phone Received Only (New message)')
+    const cart3 = { ...phoneEnteredEventData, cart_id: 'test_cart_scenario_3' }
+    await testWebhook('Scenario 3 - Phone Received Only', cart3)
+    await new Promise(resolve => setTimeout(resolve, 30_000))
+
+    // Scenario 4: AC -> PR (Abandon Cart first, then Phone Received - should NOT send/update)
+    console.log('\n🟢 SCENARIO 4: Abandon Cart -> Phone Received (No action)')
+    const cart4 = { ...abandonCartEventData, cart_id: 'test_cart_scenario_4' }
+    const cart4PR = { ...phoneEnteredEventData, cart_id: 'test_cart_scenario_4' }
+    await testWebhook('Scenario 4 - Abandon Cart', cart4)
+    await new Promise(resolve => setTimeout(resolve, 30_000))
+    await testWebhook('Scenario 4 - Phone Received (Should IGNORE)', cart4PR)
 
     console.log('\n' + '='.repeat(60))
     console.log('✨ All tests completed!')
+    console.log('='.repeat(60))
+    console.log('\n📊 Summary:')
+    console.log('- Scenario 1: Should send 1 message, then UPDATE it')
+    console.log('- Scenario 2: Should send 1 NEW message')
+    console.log('- Scenario 3: Should send 1 NEW message')
+    console.log('- Scenario 4: Should send 1 message, then IGNORE second event')
     console.log('='.repeat(60))
 }
 

@@ -1,3 +1,6 @@
+/**
+ * this event is fired when user enters phone number in checkout page
+ */
 export const phoneEnteredEventData = {
     cart_id: '693298dff686895a3e33f582',
     latest_stage: 'PHONE_RECEIVED',
@@ -17,6 +20,9 @@ export const phoneEnteredEventData = {
     },
 }
 
+/**
+ * this event is fired when user abandons the cart
+ */
 export const abandonCartEventData = {
     rtoPredict: 'low',
     cart_id: '6932795d75348b363d836d1c',
@@ -89,6 +95,9 @@ export const abandonCartEventData = {
     },
 }
 
+/**
+ * same event as abandon cart but without address info
+ */
 export const abandonCartWithoutAddressEventData = {
     cart_id: '6932967c75348b363d83cf13',
     cart_token: 'hWN62X6Q9PzQh0VUptGClri0?key=3f8cbf0b18407fb63f1c913bca263b00',

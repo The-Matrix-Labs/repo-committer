@@ -12,7 +12,7 @@ export class TelegramService {
         this.baseUrl = `https://api.telegram.org/bot${botToken}`
     }
 
-    async sendMessage(message: TelegramMessage): Promise<void> {
+    async sendMessage(message: TelegramMessage): Promise<any> {
         try {
             const requestBody: any = {
                 chat_id: this.chatId,
@@ -31,6 +31,8 @@ export class TelegramService {
             if (!response.data.ok) {
                 throw new Error(`Telegram API error: ${response.data.description}`)
             }
+
+            return response.data.result // Return the message object with message_id
         } catch (error: any) {
             console.error('Failed to send Telegram message:', error.message)
             if (error.response) {

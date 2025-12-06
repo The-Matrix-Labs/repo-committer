@@ -74,4 +74,13 @@ export class CartService {
             throw error
         }
     }
+
+    async updateTelegramMessageId(cartId: string, messageId: number): Promise<ICart | null> {
+        try {
+            return await Cart.findOneAndUpdate({ cart_id: cartId }, { telegram_message_id: messageId }, { new: true })
+        } catch (error: any) {
+            console.error('Error updating telegram message ID:', error.message)
+            throw error
+        }
+    }
 }

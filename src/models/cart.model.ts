@@ -5,6 +5,7 @@ export interface ICart extends Document {
     status: 'Not Contacted' | 'Called and Converted' | 'Called but Not Converted'
     notes?: string
     latest_stage?: string
+    telegram_message_id?: number
 
     // Item Details
     items?: any[]
@@ -42,6 +43,7 @@ const CartSchema: Schema = new Schema({
     },
     notes: { type: String },
     latest_stage: { type: String },
+    telegram_message_id: { type: Number },
 
     // Item Details
     items: { type: Array },

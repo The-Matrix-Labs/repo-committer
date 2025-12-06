@@ -139,7 +139,7 @@ export class CallbackService {
         }
     }
 
-    private async formatCartMessage(cart: any): Promise<any> {
+    async formatCartMessage(cart: any): Promise<any> {
         let message = `<b>🛒 Cart Event</b>\n\n`
 
         // ============ CUSTOMER DETAILS ============

@@ -18,8 +18,8 @@ databaseService.connect()
 const githubService = new GitHubService(process.env.GITHUB_TOKEN || '')
 const telegramService = new TelegramService(process.env.TELEGRAM_BOT_TOKEN || '', process.env.TELEGRAM_GROUP_ID || '')
 const cartService = new CartService()
-const webhookService = new WebhookService(telegramService, cartService)
 const callbackService = new CallbackService(telegramService, cartService)
+const webhookService = new WebhookService(telegramService, cartService, callbackService)
 
 // Initialize and launch Telegram bot
 let isBotActive = process.env.BOT_ACTIVE === 'true'
