@@ -1,4 +1,4 @@
-export const type1 = {
+export const phoneEnteredEventData = {
     cart_id: '693298dff686895a3e33f582',
     latest_stage: 'PHONE_RECEIVED',
     currency: 'INR',
@@ -17,7 +17,7 @@ export const type1 = {
     },
 }
 
-export const type2 = {
+export const abandonCartEventData = {
     rtoPredict: 'low',
     cart_id: '6932795d75348b363d836d1c',
     cart_token: 'hWN61dxW0mJw96GlDi3NyVBh?key=3ada625cda04e788a7892d97572fb0ec',
@@ -89,7 +89,7 @@ export const type2 = {
     },
 }
 
-export const type3 = {
+export const abandonCartWithoutAddressEventData = {
     cart_id: '6932967c75348b363d83cf13',
     cart_token: 'hWN62X6Q9PzQh0VUptGClri0?key=3f8cbf0b18407fb63f1c913bca263b00',
     latest_stage: 'PHONE_RECEIVED',

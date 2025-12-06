@@ -1,5 +1,5 @@
 const axios = require('axios')
-const { type1, type2, type3 } = require('../data/dataTypes.js')
+const { phoneEnteredEventData, abandonCartEventData, abandonCartWithoutAddressEventData } = require('../data/dataTypes.js')
 
 const WEBHOOK_URL = 'http://localhost:8080/webhook'
 
@@ -30,13 +30,13 @@ async function runTests() {
     console.log('Make sure the server is running on http://localhost:8080\n')
 
     // Wait a bit between requests
-    await testWebhook('Type 1 (Full Order with Shipping)', type1)
+    await testWebhook('Type 1 (Full Order with Shipping)', phoneEnteredEventData)
     await new Promise(resolve => setTimeout(resolve, 2000))
 
-    await testWebhook('Type 2 (Multiple Items)', type2)
+    await testWebhook('Type 2 (Multiple Items)', abandonCartEventData)
     await new Promise(resolve => setTimeout(resolve, 2000))
 
-    await testWebhook('Type 3 (Minimal Cart)', type3)
+    await testWebhook('Type 3 (Minimal Cart)', abandonCartWithoutAddressEventData)
 
     console.log('\n' + '='.repeat(60))
     console.log('✨ All tests completed!')

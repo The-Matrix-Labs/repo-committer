@@ -142,26 +142,28 @@ export class TelegramService {
             message += `\n`
 
             // ============ ITEM DETAILS ============
-            message += `<b>🛍️ ITEM DETAILS</b>\n`
-            if (data.items && data.items.length > 0) {
-                data.items.forEach((item: any, index: number) => {
-                    message += `${index + 1}. <b>${item.name || item.title}</b>\n`
-                    message += `   • Quantity: ${item.quantity || 1}\n`
-                    message += `   • Price: ₹${item.price?.toLocaleString('en-IN') || 'N/A'}\n`
-                    if (item.sku) {
-                        message += `   • SKU: ${item.sku}\n`
-                    }
-                    message += `\n`
-                })
-            } else if (data.item_name_list && data.item_name_list.length > 0) {
-                data.item_name_list.forEach((name: string, index: number) => {
-                    message += `${index + 1}. <b>${name}</b>\n`
-                    message += `   • Quantity: 1\n`
-                    if (data.item_price_list && data.item_price_list[index]) {
-                        message += `   • Price: ₹${parseFloat(data.item_price_list[index]).toLocaleString('en-IN')}\n`
-                    }
-                    message += `\n`
-                })
+            if ((data.items && data.items.length > 0) || (data.item_name_list && data.item_name_list.length > 0)) {
+                message += `<b>🛍️ ITEM DETAILS</b>\n`
+                if (data.items && data.items.length > 0) {
+                    data.items.forEach((item: any, index: number) => {
+                        message += `${index + 1}. <b>${item.name || item.title}</b>\n`
+                        message += `   • Quantity: ${item.quantity || 1}\n`
+                        message += `   • Price: ₹${item.price?.toLocaleString('en-IN') || 'N/A'}\n`
+                        if (item.sku) {
+                            message += `   • SKU: ${item.sku}\n`
+                        }
+                        message += `\n`
+                    })
+                } else if (data.item_name_list && data.item_name_list.length > 0) {
+                    data.item_name_list.forEach((name: string, index: number) => {
+                        message += `${index + 1}. <b>${name}</b>\n`
+                        message += `   • Quantity: 1\n`
+                        if (data.item_price_list && data.item_price_list[index]) {
+                            message += `   • Price: ₹${parseFloat(data.item_price_list[index]).toLocaleString('en-IN')}\n`
+                        }
+                        message += `\n`
+                    })
+                }
             }
 
             // ============ CART METADATA ============
