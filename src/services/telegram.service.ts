@@ -5,10 +5,12 @@ export class TelegramService {
     private botToken: string
     private chatId: string
     private baseUrl: string
+    private storeId: string
 
-    constructor(botToken: string, chatId: string) {
+    constructor(botToken: string, chatId: string, storeId: string) {
         this.botToken = botToken
         this.chatId = chatId
+        this.storeId = storeId
         this.baseUrl = `https://api.telegram.org/bot${botToken}`
     }
 
@@ -244,11 +246,11 @@ export class TelegramService {
                         [
                             {
                                 text: '📊 Update Status',
-                                callback_data: `status_${data.cart_id}`,
+                                callback_data: `${this.storeId}:status_${data.cart_id}`,
                             },
                             {
                                 text: '📝 Add Note',
-                                callback_data: `note_${data.cart_id}`,
+                                callback_data: `${this.storeId}:note_${data.cart_id}`,
                             },
                         ],
                     ],

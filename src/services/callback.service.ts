@@ -24,9 +24,12 @@ export class CallbackService {
         }
 
         try {
+            console.log('📥 CallbackService received:', callbackData)
+
             // Handle status update
             if (callbackData.startsWith('status_')) {
                 const cartId = callbackData.replace('status_', '')
+                console.log('📊 Showing status options for cart:', cartId)
                 await this.showStatusOptions(cartId, messageId, chatId, ctx)
             }
             // Handle status selection
@@ -34,6 +37,7 @@ export class CallbackService {
                 const parts = callbackData.split('_')
                 const status = parts[2]
                 const cartId = parts.slice(3).join('_')
+                console.log('✏️ Updating status to:', status, 'for cart:', cartId)
                 const statusMap: any = {
                     nc: 'Not Contacted',
                     cc: 'Called and Converted',
@@ -44,6 +48,7 @@ export class CallbackService {
             // Handle back to main menu
             else if (callbackData.startsWith('back_')) {
                 const cartId = callbackData.replace('back_', '')
+                console.log('⬅️ Going back to main menu for cart:', cartId)
                 const cart = await this.cartService.getCart(cartId)
                 if (cart && ctx) {
                     const message = await this.formatCartMessage(cart)
@@ -52,6 +57,8 @@ export class CallbackService {
                         reply_markup: message.reply_markup,
                     })
                 }
+            } else {
+                console.log('❓ Unknown callback data format:', callbackData)
             }
         } catch (error: any) {
             console.error('❌ Error handling callback:', error.message)
@@ -82,6 +89,7 @@ export class CallbackService {
         try {
             const cart = await this.cartService.getCart(cartId)
             const currentStatus = cart?.status || 'Not Contacted'
+            const storeId = this.cartService.getStoreId()
 
             const statusMessage = `<b>Update Status</b>\n\nCurrent Status: <b>${currentStatus}</b>\n\nSelect new status:`
 
@@ -90,25 +98,25 @@ export class CallbackService {
                     [
                         {
                             text: '🔴 Not Contacted',
-                            callback_data: `set_status_nc_${cartId}`,
+                            callback_data: `${storeId}:set_status_nc_${cartId}`,
                         },
                     ],
                     [
                         {
                             text: '✅ Called and Converted',
-                            callback_data: `set_status_cc_${cartId}`,
+                            callback_data: `${storeId}:set_status_cc_${cartId}`,
                         },
                     ],
                     [
                         {
                             text: '❌ Called but Not Converted',
-                            callback_data: `set_status_cnc_${cartId}`,
+                            callback_data: `${storeId}:set_status_cnc_${cartId}`,
                         },
                     ],
                     [
                         {
                             text: '« Back',
-                            callback_data: `back_${cartId}`,
+                            callback_data: `${storeId}:back_${cartId}`,
                         },
                     ],
                 ],
@@ -257,6 +265,7 @@ export class CallbackService {
         // Create inline keyboard buttons if phone number exists
         const phoneNumber = cart.phone_number?.replace(/[^0-9]/g, '')
         const formattedPhone = phoneNumber?.startsWith('91') ? phoneNumber : `91${phoneNumber}`
+        const storeId = this.cartService.getStoreId()
 
         return {
             text: message,
@@ -273,11 +282,11 @@ export class CallbackService {
                           [
                               {
                                   text: '📊 Update Status',
-                                  callback_data: `status_${cart.cart_id}`,
+                                  callback_data: `${storeId}:status_${cart.cart_id}`,
                               },
                               {
                                   text: '📝 Add Note',
-                                  callback_data: `note_${cart.cart_id}`,
+                                  callback_data: `${storeId}:note_${cart.cart_id}`,
                               },
                           ],
                       ],

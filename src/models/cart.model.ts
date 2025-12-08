@@ -72,4 +72,14 @@ const CartSchema: Schema = new Schema({
     created_at: { type: Date, default: Date.now },
 })
 
-export default mongoose.model<ICart>('Cart', CartSchema)
+// Factory function to create a model for a specific collection
+export function getCartModel(collectionName: string) {
+    // Check if model already exists to avoid OverwriteModelError
+    if (mongoose.models[collectionName]) {
+        return mongoose.models[collectionName]
+    }
+    return mongoose.model<ICart>(collectionName, CartSchema, collectionName)
+}
+
+// Default export for backward compatibility
+export default getCartModel('Cart')

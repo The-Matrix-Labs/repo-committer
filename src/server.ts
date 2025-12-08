@@ -1,8 +1,10 @@
 import express, { Request, Response } from 'express'
 import dotenv from 'dotenv'
 import rateLimit from 'express-rate-limit'
-import { GitHubService, TelegramService, WebhookService, DatabaseService, CartService, CallbackService } from './services'
+import { GitHubService, DatabaseService } from './services'
 import { TelegramBotService } from './services/bot.service'
+import { StoreManager } from './services/store.manager'
+import { STORE_CONFIGS } from './config/stores.config'
 
 // Load environment variables
 dotenv.config()
@@ -11,20 +13,39 @@ const app = express()
 const port = process.env.PORT || 3000
 
 // Initialize database
-const databaseService = new DatabaseService(process.env.MONGODB_URI || 'mongodb+srv://amansingh9723chauhan_db_user:IxWlNtKBHHpiQ8VJ@cluster0.mgnrbot.mongodb.net/')
+if (!process.env.MONGODB_URI) {
+    console.error('❌ MONGODB_URI environment variable is required')
+    process.exit(1)
+}
+const databaseService = new DatabaseService(process.env.MONGODB_URI)
 databaseService.connect()
 
-// Initialize services
+// Initialize GitHub service (for the existing repo-committer functionality)
 const githubService = new GitHubService(process.env.GITHUB_TOKEN || '')
-const telegramService = new TelegramService(process.env.TELEGRAM_BOT_TOKEN || '', process.env.TELEGRAM_GROUP_ID || '')
-const cartService = new CartService()
-const callbackService = new CallbackService(telegramService, cartService)
-const webhookService = new WebhookService(telegramService, cartService, callbackService)
 
-// Initialize and launch Telegram bot
+// Initialize Store Manager
+const storeManager = new StoreManager(process.env.TELEGRAM_BOT_TOKEN || '', process.env.GOOGLE_SHEETS_CREDENTIALS)
+
+// Initialize all stores
+async function initializeStores() {
+    console.log('\n🚀 Initializing stores...\n')
+    for (const config of STORE_CONFIGS) {
+        await storeManager.initializeStore(config)
+    }
+    console.log('\n✅ All stores initialized\n')
+}
+
+// Initialize stores
+initializeStores().catch(error => {
+    console.error('Failed to initialize stores:', error)
+    process.exit(1)
+})
+
+// Initialize Telegram bot (shared across all stores)
 let isBotActive = process.env.BOT_ACTIVE === 'true'
-const botService = new TelegramBotService(process.env.TELEGRAM_BOT_TOKEN || '', callbackService)
 if (isBotActive) {
+    // Pass StoreManager to the bot so it can handle callbacks for all stores
+    const botService = new TelegramBotService(process.env.TELEGRAM_BOT_TOKEN || '', storeManager)
     botService.launch()
     console.log('🤖 Bot is ACTIVE')
 } else {
@@ -85,15 +106,28 @@ app.post('/', limiter, async (req: Request, res: Response) => {
     }
 })
 
-// Webhook endpoint
-app.post('/webhook', async (req: Request, res: Response) => {
-    if (!isBotActive) {
-        return res.status(200).json({
-            success: true,
-            message: 'Bot is currently disabled. Webhook ignored.',
-        })
-    }
-    await webhookService.handleWebhook(req, res)
+// Store-specific webhook endpoints
+STORE_CONFIGS.forEach(config => {
+    app.post(config.webhookPath, async (req: Request, res: Response) => {
+        if (!isBotActive) {
+            return res.status(200).json({
+                success: true,
+                message: 'Bot is currently disabled. Webhook ignored.',
+            })
+        }
+
+        const store = storeManager.getStoreServices(config.storeId)
+        if (!store) {
+            return res.status(500).json({
+                success: false,
+                message: 'Store not initialized',
+            })
+        }
+
+        await store.webhookService.handleWebhook(req, res)
+    })
+
+    console.log(`📍 Webhook endpoint registered: ${config.webhookPath} -> ${config.storeName}`)
 })
 
 app.get('/bot/status', (req: Request, res: Response) => {
@@ -103,6 +137,54 @@ app.get('/bot/status', (req: Request, res: Response) => {
     })
 })
 
+// Store listing endpoint
+app.get('/stores', (req: Request, res: Response) => {
+    const stores = storeManager.getAllStores().map(store => ({
+        storeId: store.config.storeId,
+        storeName: store.config.storeName,
+        webhookPath: store.config.webhookPath,
+        telegramGroupId: store.config.telegramGroupId,
+        hasGoogleSheets: !!store.sheetsService,
+    }))
+
+    res.json({
+        success: true,
+        stores,
+    })
+})
+
+// Store-specific Google Sheets URL endpoint
+app.get('/stores/:storeId/sheets/url', (req: Request, res: Response) => {
+    const { storeId } = req.params
+    const store = storeManager.getStoreServices(storeId)
+
+    if (!store) {
+        return res.status(404).json({
+            success: false,
+            message: 'Store not found',
+        })
+    }
+
+    if (!store.sheetsService) {
+        return res.status(503).json({
+            success: false,
+            message: 'Google Sheets integration is not configured for this store',
+        })
+    }
+
+    res.json({
+        success: true,
+        storeId: store.config.storeId,
+        storeName: store.config.storeName,
+        url: store.sheetsService.getSpreadsheetUrl(),
+    })
+})
+
 app.listen(port, () => {
-    console.log(`Server running on http://localhost:${port}`)
+    console.log(`\n🚀 Server running on http://localhost:${port}`)
+    console.log('\n📍 Available webhook endpoints:')
+    STORE_CONFIGS.forEach(config => {
+        console.log(`   ${config.webhookPath} -> ${config.storeName}`)
+    })
+    console.log('')
 })

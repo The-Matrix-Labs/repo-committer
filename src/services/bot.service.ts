@@ -1,14 +1,14 @@
 import { Telegraf } from 'telegraf'
-import { CallbackService } from './callback.service'
+import { StoreManager } from './store.manager'
 
 export class TelegramBotService {
     private bot: Telegraf
-    private callbackService: CallbackService
-    private awaitingNote: Map<number, { cartId: string; messageId: number; promptMessageId?: number }> = new Map()
+    private storeManager: StoreManager
+    private awaitingNote: Map<number, { cartId: string; messageId: number; promptMessageId?: number; storeId: string }> = new Map()
 
-    constructor(botToken: string, callbackService: CallbackService) {
+    constructor(botToken: string, storeManager: StoreManager) {
         this.bot = new Telegraf(botToken)
-        this.callbackService = callbackService
+        this.storeManager = storeManager
 
         this.setupHandlers()
     }
@@ -24,10 +24,29 @@ export class TelegramBotService {
                     return
                 }
 
+                console.log('🤖 Bot received callback_data:', callbackData)
+
+                // Extract store ID from callback data (format: storeId:action_data)
+                const [storeId, ...actionParts] = callbackData.split(':')
+                const action = actionParts.join(':')
+
+                console.log('📦 Extracted - storeId:', storeId, 'action:', action)
+
+                const store = this.storeManager.getStoreServices(storeId)
+                if (!store) {
+                    console.error('❌ Store not found:', storeId)
+                    await ctx.answerCbQuery('Store not found')
+                    return
+                }
+
+                console.log('✅ Store found:', storeId)
+
                 // Check if this is a note request
-                if (callbackData.startsWith('note_')) {
-                    const cartId = callbackData.replace('note_', '')
+                if (action.startsWith('note_')) {
+                    const cartId = action.replace('note_', '')
                     const messageId = ctx.callbackQuery.message?.message_id
+
+                    console.log('📝 Note request for cart:', cartId)
 
                     // Send a prompt message
                     const promptMsg = await ctx.reply('📝 <b>Add Note</b>\n\nType your note and send it. It will replace any existing note.', {
@@ -41,15 +60,25 @@ export class TelegramBotService {
                         cartId: cartId,
                         messageId: messageId!,
                         promptMessageId: promptMsg.message_id,
+                        storeId: storeId,
                     })
                     await ctx.answerCbQuery()
                     return
                 }
 
-                // Handle all other callbacks (status, back, etc.)
-                await this.callbackService.handleCallback(ctx.callbackQuery, ctx)
+                console.log('🔀 Routing to CallbackService with action:', action)
+
+                // Create a modified callback query with the action (without storeId prefix)
+                const modifiedCallbackQuery = {
+                    ...ctx.callbackQuery,
+                    data: action,
+                }
+
+                // Handle all other callbacks (status, back, etc.) with the correct store's callback service
+                await store.callbackService.handleCallback(modifiedCallbackQuery, ctx)
             } catch (error: any) {
                 console.error('❌ Error handling callback:', error.message)
+                console.error('❌ Stack trace:', error.stack)
                 await ctx.answerCbQuery('Error occurred').catch(() => {})
             }
         })
@@ -81,14 +110,23 @@ export class TelegramBotService {
                         }
                     }
 
+                    // Get the correct store's callback service
+                    const store = this.storeManager.getStoreServices(noteData.storeId)
+                    if (!store) {
+                        await ctx.reply('Store not found')
+                        return
+                    }
+
                     // Add note and update the cart message
-                    await this.callbackService.addNoteDirectly(noteData.cartId, text, noteData.messageId, ctx)
+                    await store.callbackService.addNoteDirectly(noteData.cartId, text, noteData.messageId, ctx)
                     return
                 }
 
-                // Handle /note command (legacy support)
+                // Handle /note command (legacy support) - try all stores
                 if (text.startsWith('/note')) {
-                    const response = await this.callbackService.handleNoteCommand(text, userId.toString())
+                    // Since we don't know which store the cart belongs to, try the first store
+                    const firstStoreServices = Array.from(this.storeManager.getAllStores().values())[0]
+                    const response = await firstStoreServices.callbackService.handleNoteCommand(text, userId.toString())
                     await ctx.reply(response, { parse_mode: 'HTML' })
                 }
             } catch (error: any) {
