@@ -1,7 +1,7 @@
 const axios = require('axios')
 const { phoneEnteredEventData, abandonCartEventData, abandonCartWithoutAddressEventData } = require('../data/dataTypes.js')
 
-const WEBHOOK_URL = 'http://localhost:8080/webhook'
+const WEBHOOK_URL = 'http://localhost:8080/webhook/store1'
 
 async function testWebhook(type, data) {
     console.log(`\n${'='.repeat(60)}`)
@@ -33,8 +33,8 @@ async function runTests() {
 
     // Scenario 1: PR -> AC (Phone Received first, then Abandon Cart)
     console.log('\n🟢 SCENARIO 1: Phone Received -> Abandon Cart (Update message)')
-    const cart1 = { ...phoneEnteredEventData, cart_id: 'test_cart_scenario_1' }
-    const cart1AC = { ...abandonCartEventData, cart_id: 'test_cart_scenario_1' }
+    const cart1 = { ...phoneEnteredEventData, cart_id: 'test_cart_scenario_9' }
+    const cart1AC = { ...abandonCartEventData, cart_id: 'test_cart_scenario_9' }
     await testWebhook('Scenario 1 - Phone Received', cart1)
     await new Promise(resolve => setTimeout(resolve, 30_000))
     await testWebhook('Scenario 1 - Abandon Cart (Should UPDATE)', cart1AC)
@@ -42,20 +42,20 @@ async function runTests() {
 
     // Scenario 2: AC only (Abandon Cart first and only)
     console.log('\n🟢 SCENARIO 2: Abandon Cart Only (New message)')
-    const cart2 = { ...abandonCartEventData, cart_id: 'test_cart_scenario_2' }
+    const cart2 = { ...abandonCartEventData, cart_id: 'test_cart_scenario_10' }
     await testWebhook('Scenario 2 - Abandon Cart Only', cart2)
     await new Promise(resolve => setTimeout(resolve, 30_000))
 
     // Scenario 3: PR only (Phone Received first and only)
     console.log('\n🟢 SCENARIO 3: Phone Received Only (New message)')
-    const cart3 = { ...phoneEnteredEventData, cart_id: 'test_cart_scenario_3' }
+    const cart3 = { ...phoneEnteredEventData, cart_id: 'test_cart_scenario_11' }
     await testWebhook('Scenario 3 - Phone Received Only', cart3)
     await new Promise(resolve => setTimeout(resolve, 30_000))
 
     // Scenario 4: AC -> PR (Abandon Cart first, then Phone Received - should NOT send/update)
     console.log('\n🟢 SCENARIO 4: Abandon Cart -> Phone Received (No action)')
-    const cart4 = { ...abandonCartEventData, cart_id: 'test_cart_scenario_4' }
-    const cart4PR = { ...phoneEnteredEventData, cart_id: 'test_cart_scenario_4' }
+    const cart4 = { ...abandonCartEventData, cart_id: 'test_cart_scenario_12' }
+    const cart4PR = { ...phoneEnteredEventData, cart_id: 'test_cart_scenario_12' }
     await testWebhook('Scenario 4 - Abandon Cart', cart4)
     await new Promise(resolve => setTimeout(resolve, 30_000))
     await testWebhook('Scenario 4 - Phone Received (Should IGNORE)', cart4PR)

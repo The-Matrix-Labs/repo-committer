@@ -72,30 +72,6 @@ If configured correctly, you should see:
 
 ## Usage
 
-### Automatic Sync (Cron Job)
-
-Once configured, the system automatically syncs all MongoDB data to Google Sheets on a scheduled basis:
-
-**Default Schedule:** Every hour (at minute 0)
-
-**Custom Schedule:** Set the `SHEETS_SYNC_CRON` environment variable:
-
-```env
-# Every 30 minutes
-SHEETS_SYNC_CRON=*/30 * * * *
-
-# Every 6 hours
-SHEETS_SYNC_CRON=0 */6 * * *
-
-# Every day at midnight
-SHEETS_SYNC_CRON=0 0 * * *
-
-# Every 15 minutes
-SHEETS_SYNC_CRON=*/15 * * * *
-```
-
-Cron format: `minute hour day month day-of-week`
-
 ### Real-time Sync
 
 Individual cart operations sync immediately to Google Sheets:
@@ -103,7 +79,6 @@ Individual cart operations sync immediately to Google Sheets:
 -   Creating/updating carts (real-time)
 -   Updating cart status (real-time)
 -   Adding notes (real-time)
--   Full database sync (scheduled via cron job)
 
 ### View Spreadsheet URL
 

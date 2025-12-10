@@ -82,7 +82,7 @@ export class WebhookService {
                 // Send product images first
                 const imageUrls = this.telegramService.extractImageUrls(payload.data)
                 if (imageUrls.length > 0) {
-                    await this.telegramService.sendMediaGroup(imageUrls, '🛍️ Product Images')
+                    await this.telegramService.sendMediaGroup(imageUrls, '🛍️ Product Images ⬇️')
                 }
 
                 // Fetch the latest cart data from DB (includes status and notes)
@@ -104,6 +104,19 @@ export class WebhookService {
                 const latestCart = await this.cartService.getCart(payload.data.cart_id)
                 if (!latestCart) {
                     throw new Error('Cart not found')
+                }
+
+                // Check if this is an upgrade from Phone Received to Abandon Cart (Scenario 1)
+                const existingHasShippingAddress = existingCart.shipping_address && Object.keys(existingCart.shipping_address).length > 0
+                const existingHasItemDetails = (existingCart.items && existingCart.items.length > 0) || (existingCart.item_name_list && existingCart.item_name_list.length > 0)
+                const existingIsAbandonCart = existingHasShippingAddress || existingHasItemDetails
+
+                // If upgrading from phone event to abandon cart event, send images
+                if (isAbandonCart && !existingIsAbandonCart) {
+                    const imageUrls = this.telegramService.extractImageUrls(payload.data)
+                    if (imageUrls.length > 0) {
+                        await this.telegramService.sendMediaGroup(imageUrls, '🛍️ Product Images ⬆️')
+                    }
                 }
 
                 // Use formatCartMessage to preserve status and notes

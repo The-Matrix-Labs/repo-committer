@@ -29,19 +29,19 @@ export class GoogleSheetsService {
      */
     async initializeSheet(): Promise<void> {
         try {
-            const headers = ['Cart ID', 'Status', 'Notes', 'Latest Stage', 'First Name', 'Last Name', 'Email', 'Phone Number', 'Phone Verified', 'Item Names', 'Item Prices', 'Shipping Price', 'RTO Predict', 'Total Price', 'Tax', 'Payment Status', 'Created At', 'Updated At']
+            const headers = ['Cart ID', 'Status', 'Notes', 'Latest Stage', 'First Name', 'Last Name', 'Email', 'Phone Number', 'Phone Verified', 'Item Names', 'Item Prices', 'Image URLs', 'Shipping Price', 'RTO Predict', 'Total Price', 'Tax', 'Payment Status', 'Created At', 'Updated At']
 
             // Check if the sheet is empty
             const response = await this.sheets.spreadsheets.values.get({
                 spreadsheetId: this.spreadsheetId,
-                range: 'A1:R1',
+                range: 'A1:S1',
             })
 
             // If no data, add headers
             if (!response.data.values || response.data.values.length === 0) {
                 await this.sheets.spreadsheets.values.update({
                     spreadsheetId: this.spreadsheetId,
-                    range: 'A1:R1',
+                    range: 'A1:S1',
                     valueInputOption: 'RAW',
                     resource: {
                         values: [headers],
@@ -59,7 +59,7 @@ export class GoogleSheetsService {
      * Convert cart data to sheet row format
      */
     private cartToRow(cart: ICart): any[] {
-        return [cart.cart_id || '', cart.status || 'Not Contacted', cart.notes || '', cart.latest_stage || '', cart.first_name || '', cart.last_name || '', cart.email || '', cart.phone_number || '', cart.phone_verified ? 'Yes' : 'No', cart.item_name_list ? cart.item_name_list.join(', ') : '', cart.item_price_list ? cart.item_price_list.join(', ') : '', cart.shipping_price || '', cart.rtoPredict || '', cart.total_price || '', cart.tax || '', cart.payment_status || '', cart.created_at ? new Date(cart.created_at).toISOString() : '', cart.updated_at ? new Date(cart.updated_at).toISOString() : '']
+        return [cart.cart_id || '', cart.status || 'Not Contacted', cart.notes || '', cart.latest_stage || '', cart.first_name || '', cart.last_name || '', cart.email || '', cart.phone_number || '', cart.phone_verified ? 'Yes' : 'No', cart.item_name_list ? cart.item_name_list.join(', ') : '', cart.item_price_list ? cart.item_price_list.join(', ') : '', cart.image_urls ? cart.image_urls.join(', ') : '', cart.shipping_price || '', cart.rtoPredict || '', cart.total_price || '', cart.tax || '', cart.payment_status || '', cart.created_at ? new Date(cart.created_at).toISOString() : '', cart.updated_at ? new Date(cart.updated_at).toISOString() : '']
     }
 
     /**
@@ -83,7 +83,7 @@ export class GoogleSheetsService {
                 const rowNumber = cartIndex + 1
                 await this.sheets.spreadsheets.values.update({
                     spreadsheetId: this.spreadsheetId,
-                    range: `A${rowNumber}:R${rowNumber}`,
+                    range: `A${rowNumber}:S${rowNumber}`,
                     valueInputOption: 'RAW',
                     resource: {
                         values: [rowData],
@@ -94,7 +94,7 @@ export class GoogleSheetsService {
                 // Append new row
                 await this.sheets.spreadsheets.values.append({
                     spreadsheetId: this.spreadsheetId,
-                    range: 'A:R',
+                    range: 'A:S',
                     valueInputOption: 'RAW',
                     insertDataOption: 'INSERT_ROWS',
                     resource: {
@@ -134,13 +134,13 @@ export class GoogleSheetsService {
             // Clear existing data (except headers) and write all data
             await this.sheets.spreadsheets.values.clear({
                 spreadsheetId: this.spreadsheetId,
-                range: 'A2:R',
+                range: 'A2:S',
             })
 
             // Append all rows at once
             await this.sheets.spreadsheets.values.append({
                 spreadsheetId: this.spreadsheetId,
-                range: 'A:R',
+                range: 'A:S',
                 valueInputOption: 'RAW',
                 insertDataOption: 'INSERT_ROWS',
                 resource: {

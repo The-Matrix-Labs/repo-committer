@@ -11,6 +11,7 @@ export interface ICart extends Document {
     items?: any[]
     item_name_list?: string[]
     item_price_list?: string[]
+    image_urls?: string[]
 
     // Customer Details
     first_name?: string
@@ -49,6 +50,7 @@ const CartSchema: Schema = new Schema({
     items: { type: Array },
     item_name_list: { type: Array },
     item_price_list: { type: Array },
+    image_urls: { type: Array },
 
     // Customer Details
     first_name: { type: String },

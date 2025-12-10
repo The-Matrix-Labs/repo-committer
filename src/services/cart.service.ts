@@ -15,6 +15,16 @@ export class CartService {
     }
     async createOrUpdateCart(data: any): Promise<ICart> {
         try {
+            // Extract image URLs from items
+            const imageUrls: string[] = []
+            if (data.items && data.items.length > 0) {
+                data.items.forEach((item: any) => {
+                    if (item.img_url && typeof item.img_url === 'string' && item.img_url.trim()) {
+                        imageUrls.push(item.img_url.trim())
+                    }
+                })
+            }
+
             const cartData = {
                 cart_id: data.cart_id,
                 latest_stage: data.latest_stage,
@@ -23,6 +33,7 @@ export class CartService {
                 items: data.items,
                 item_name_list: data.item_name_list,
                 item_price_list: data.item_price_list,
+                image_urls: imageUrls.length > 0 ? imageUrls : undefined,
 
                 // Customer Details
                 first_name: data.first_name,

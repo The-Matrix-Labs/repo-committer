@@ -1,4 +1,3 @@
-import cron from 'node-cron'
 import { StoreConfig } from '../config/stores.config'
 import { TelegramService } from './telegram.service'
 import { CartService } from './cart.service'
@@ -59,32 +58,6 @@ export class StoreManager {
             webhookService,
             sheetsService,
         })
-
-        // Set up cron job for this store if Google Sheets is configured
-        if (sheetsService) {
-            const cronSchedule = process.env.SHEETS_SYNC_CRON || '0 * * * *'
-
-            // Initial sync
-            console.log(`  🔄 Running initial sync for ${config.storeName}...`)
-            try {
-                const result = await cartService.syncAllToSheets()
-                console.log(`  ✅ ${result.message}`)
-            } catch (error: any) {
-                console.error(`  ❌ Initial sync failed for ${config.storeName}:`, error.message)
-            }
-
-            // Schedule recurring sync
-            cron.schedule(cronSchedule, async () => {
-                console.log(`🔄 Running scheduled sync for ${config.storeName}...`)
-                try {
-                    const result = await cartService.syncAllToSheets()
-                    console.log(`✅ ${config.storeName}: ${result.message}`)
-                } catch (error: any) {
-                    console.error(`❌ Scheduled sync failed for ${config.storeName}:`, error.message)
-                }
-            })
-            console.log(`  ⏰ Cron job scheduled for ${config.storeName}: ${cronSchedule}`)
-        }
 
         console.log(`✅ ${config.storeName} initialized successfully`)
     }
