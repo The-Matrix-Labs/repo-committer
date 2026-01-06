@@ -1,30 +1,36 @@
 import express, { Request, Response } from 'express'
-import dotenv from 'dotenv'
 import rateLimit from 'express-rate-limit'
-import { GitHubService, DatabaseService } from './services'
+import {
+    GitHubService,
+    DatabaseService,
+    ReportingScheduler,
+    ReportingService,
+    ShiprocketService,
+    ShiprocketUndeliveredOrderService,
+    TelegramService,
+} from './services'
 import { TelegramBotService } from './services/bot.service'
 import { StoreManager } from './services/store.manager'
+import { env } from './config/env.config'
 import { STORE_CONFIGS } from './config/stores.config'
 
-// Load environment variables
-dotenv.config()
-
 const app = express()
-const port = process.env.PORT || 3000
+const port = env.port
 
 // Initialize database
-if (!process.env.MONGODB_URI) {
+if (!env.mongodbUri) {
     console.error('❌ MONGODB_URI environment variable is required')
     process.exit(1)
 }
-const databaseService = new DatabaseService(process.env.MONGODB_URI)
+const databaseService = new DatabaseService(env.mongodbUri)
 databaseService.connect()
 
 // Initialize GitHub service (for the existing repo-committer functionality)
-const githubService = new GitHubService(process.env.GITHUB_TOKEN || '')
+const githubService = new GitHubService(env.githubToken)
 
 // Initialize Store Manager
-const storeManager = new StoreManager(process.env.TELEGRAM_BOT_TOKEN || '', process.env.GOOGLE_SHEETS_CREDENTIALS)
+const storeManager = new StoreManager(env.telegramBotToken, env.googleSheetsCredentials)
+let shiprocketUndeliveredService: ShiprocketUndeliveredOrderService | undefined
 
 // Initialize all stores
 async function initializeStores() {
@@ -41,15 +47,56 @@ initializeStores().catch(error => {
     process.exit(1)
 })
 
+// Shiprocket reporting scheduler (daily/weekly/monthly)
+const shiprocketToken = env.shiprocketApiToken
+const reportingGroupId = env.reportTelegramGroupId
+let reportingService: ReportingService | undefined
+if (shiprocketToken && reportingGroupId && env.telegramBotToken) {
+    const weeklyDay = env.reportWeeklyDay
+    const monthlyDay = env.reportMonthlyDay
+
+    const shiprocketService = new ShiprocketService(shiprocketToken, {
+        baseUrl: env.shiprocketApiBaseUrl,
+        useMockData: false,
+        authEmail: env.shiprocketEmail,
+        authPassword: env.shiprocketPassword,
+        tokenRefreshMarginSeconds: env.shiprocketTokenRefreshMarginSeconds,
+    })
+    shiprocketUndeliveredService = new ShiprocketUndeliveredOrderService()
+
+    const reportingTelegramService = new TelegramService(env.telegramBotToken, reportingGroupId, 'shiprocket-reports')
+
+    reportingService = new ReportingService(shiprocketService, reportingTelegramService, shiprocketUndeliveredService, {
+        timezone: env.reportTimezone,
+        dailyLookbackDays: env.reportDailyLookbackDays,
+        weeklyLookbackDays: env.reportWeeklyLookbackDays,
+        monthlyLookbackDays: env.reportMonthlyLookbackDays,
+    })
+
+    const reportingScheduler = new ReportingScheduler(reportingService, {
+        timezone: env.reportTimezone,
+        dailyTime: env.reportDailyTime,
+        weeklyTime: env.reportWeeklyTime,
+        weeklyDay: Number.isNaN(weeklyDay) ? undefined : weeklyDay,
+        monthlyTime: env.reportMonthlyTime,
+        monthlyDay: Number.isNaN(monthlyDay) ? undefined : monthlyDay,
+    })
+
+    reportingScheduler.start()
+} else {
+    console.log('?? Shiprocket reporting disabled. Ensure SHIPROCKET_API_TOKEN, REPORT_TELEGRAM_GROUP_ID and TELEGRAM_BOT_TOKEN are set.')
+}
+
 // Initialize Telegram bot (shared across all stores)
-let isBotActive = process.env.BOT_ACTIVE === 'true'
+let isBotActive = env.botActive
+let botService: TelegramBotService | undefined
 if (isBotActive) {
-    // Pass StoreManager to the bot so it can handle callbacks for all stores
-    const botService = new TelegramBotService(process.env.TELEGRAM_BOT_TOKEN || '', storeManager)
+    botService = new TelegramBotService(env.telegramBotToken, storeManager, reportingService, shiprocketUndeliveredService)
+    storeManager.setTelegramClient(botService.getBot().telegram)
     botService.launch()
     console.log('🤖 Bot is ACTIVE')
 } else {
-    console.log('⏸️  Bot is DISABLED (set BOT_ACTIVE=true in .env to enable)')
+    console.log('🤖  Bot is DISABLED (set BOT_ACTIVE=true in .env to enable)')
 }
 
 // Rate limiter to prevent abuse on GitHub endpoints
@@ -68,7 +115,7 @@ app.get('/health', (req: Request, res: Response) => {
         status: 'ok',
         timestamp: new Date().toISOString(),
         uptime: process.uptime(),
-        environment: process.env.NODE_ENV || 'development',
+        environment: env.nodeEnv,
     })
 })
 

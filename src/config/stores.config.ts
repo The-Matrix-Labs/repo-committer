@@ -1,3 +1,5 @@
+import { env } from './env.config'
+
 export interface StoreConfig {
     storeId: string
     storeName: string
@@ -11,17 +13,17 @@ export const STORE_CONFIGS: StoreConfig[] = [
     {
         storeId: 'store1',
         storeName: 'Store 1',
-        telegramGroupId: process.env.STORE1_TELEGRAM_GROUP_ID || '',
-        mongoDbName: process.env.STORE1_MONGODB_NAME || 'store1',
-        googleSheetsSpreadsheetId: process.env.STORE1_GOOGLE_SHEETS_SPREADSHEET_ID,
+        telegramGroupId: env.store1TelegramGroupId,
+        mongoDbName: env.store1MongoDbName,
+        googleSheetsSpreadsheetId: env.store1GoogleSheetsSpreadsheetId,
         webhookPath: '/webhook/store1',
     },
     {
         storeId: 'store2',
         storeName: 'Store 2',
-        telegramGroupId: process.env.STORE2_TELEGRAM_GROUP_ID || '',
-        mongoDbName: process.env.STORE2_MONGODB_NAME || 'store2',
-        googleSheetsSpreadsheetId: process.env.STORE2_GOOGLE_SHEETS_SPREADSHEET_ID,
+        telegramGroupId: env.store2TelegramGroupId,
+        mongoDbName: env.store2MongoDbName,
+        googleSheetsSpreadsheetId: env.store2GoogleSheetsSpreadsheetId,
         webhookPath: '/webhook/store2',
     },
 ]

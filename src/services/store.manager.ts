@@ -4,6 +4,7 @@ import { CartService } from './cart.service'
 import { CallbackService } from './callback.service'
 import { WebhookService } from './webhook.service'
 import { GoogleSheetsService } from './sheets.service'
+import { Telegram } from 'telegraf'
 
 export interface StoreServices {
     config: StoreConfig
@@ -18,6 +19,7 @@ export class StoreManager {
     private stores: Map<string, StoreServices> = new Map()
     private telegramBotToken: string
     private googleSheetsCredentials?: string
+    private telegramClient?: Telegram
 
     constructor(telegramBotToken: string, googleSheetsCredentials?: string) {
         this.telegramBotToken = telegramBotToken
@@ -28,7 +30,7 @@ export class StoreManager {
         console.log(`\n🏪 Initializing ${config.storeName} (${config.storeId})...`)
 
         // Initialize Telegram service for this store
-        const telegramService = new TelegramService(this.telegramBotToken, config.telegramGroupId, config.storeId)
+        const telegramService = new TelegramService(this.telegramBotToken, config.telegramGroupId, config.storeId, this.telegramClient)
 
         // Initialize Google Sheets service if configured
         let sheetsService: GoogleSheetsService | undefined
@@ -60,6 +62,13 @@ export class StoreManager {
         })
 
         console.log(`✅ ${config.storeName} initialized successfully`)
+    }
+
+    setTelegramClient(client: Telegram): void {
+        this.telegramClient = client
+        this.stores.forEach(store => {
+            store.telegramService.setTelegramClient(client)
+        })
     }
 
     getStoreServices(storeId: string): StoreServices | undefined {

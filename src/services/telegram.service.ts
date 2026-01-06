@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { Telegram } from 'telegraf'
 import { TelegramMessage } from '../types'
 
 export class TelegramService {
@@ -6,12 +7,18 @@ export class TelegramService {
     private chatId: string
     private baseUrl: string
     private storeId: string
+    private telegramClient?: Telegram
 
-    constructor(botToken: string, chatId: string, storeId: string) {
+    constructor(botToken: string, chatId: string, storeId: string, telegramClient?: Telegram) {
         this.botToken = botToken
         this.chatId = chatId
         this.storeId = storeId
         this.baseUrl = `https://api.telegram.org/bot${botToken}`
+        this.telegramClient = telegramClient
+    }
+
+    setTelegramClient(client: Telegram): void {
+        this.telegramClient = client
     }
 
     async sendMessage(message: TelegramMessage): Promise<any> {
@@ -27,6 +34,13 @@ export class TelegramService {
             }
 
             console.log('Sending to Telegram:', JSON.stringify(requestBody, null, 2))
+
+            if (this.telegramClient) {
+                return await this.telegramClient.sendMessage(requestBody.chat_id, requestBody.text, {
+                    parse_mode: requestBody.parse_mode,
+                    reply_markup: requestBody.reply_markup,
+                })
+            }
 
             const response = await axios.post(`${this.baseUrl}/sendMessage`, requestBody)
 
@@ -47,6 +61,11 @@ export class TelegramService {
 
     async answerCallbackQuery(callbackQueryId: string, text?: string): Promise<void> {
         try {
+            if (this.telegramClient) {
+                await this.telegramClient.answerCbQuery(callbackQueryId, text || 'Processing...')
+                return
+            }
+
             await axios.post(`${this.baseUrl}/answerCallbackQuery`, {
                 callback_query_id: callbackQueryId,
                 text: text || 'Processing...',
@@ -69,6 +88,14 @@ export class TelegramService {
                 requestBody.reply_markup = replyMarkup
             }
 
+            if (this.telegramClient) {
+                await this.telegramClient.editMessageText(requestBody.chat_id, requestBody.message_id, undefined, requestBody.text, {
+                    parse_mode: requestBody.parse_mode,
+                    reply_markup: requestBody.reply_markup,
+                })
+                return
+            }
+
             await axios.post(`${this.baseUrl}/editMessageText`, requestBody)
         } catch (error: any) {
             console.error('Failed to edit message:', error.message)
@@ -85,6 +112,11 @@ export class TelegramService {
                 caption: index === 0 ? caption : undefined,
                 parse_mode: index === 0 ? 'HTML' : undefined,
             }))
+
+            if (this.telegramClient) {
+                await this.telegramClient.sendMediaGroup(this.chatId, media as any)
+                return
+            }
 
             await axios.post(`${this.baseUrl}/sendMediaGroup`, {
                 chat_id: this.chatId,
