@@ -27,17 +27,12 @@ export class ReportingService {
     private weeklyLookbackDays: number
     private monthlyLookbackDays: number
     private static readonly CANCELLED_CODES = new Set([5, 18, 54])
-    private static readonly DELIVERED_CODES = new Set([7, 38])
-    private static readonly UNDELIVERED_CODES = new Set([36, 50, 88, 89, 90])
-    private static readonly RETURN_CODES = new Set([9, 15, 16, 17, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 45, 46, 47, 48, 55, 68, 87])
-    private static readonly IN_TRANSIT_CODES = new Set([3, 4, 6, 19, 20, 34, 37, 43, 44, 45, 46, 47, 48, 62, 64, 65, 66, 67, 70, 71, 72, 73, 74, 75, 76, 80, 81, 82, 83])
+    private static readonly DELIVERED_CODES = new Set([7, 38, 41])
+    private static readonly UNDELIVERED_CODES = new Set([36, 50, 88, 89])
+    private static readonly RETURN_CODES = new Set([9, 15, 16, 17, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 45, 46, 47, 48, 49, 55, 68, 87, 90])
+    private static readonly IN_TRANSIT_CODES = new Set([3, 4, 6, 12, 13, 19, 20, 34, 37, 39, 40, 43, 44, 51, 58, 59, 60, 61, 62, 64, 65, 66, 67, 69, 70, 71, 72, 73, 74, 75, 76, 80, 81, 82, 83, 86])
 
-    constructor(
-        private shiprocketService: ShiprocketService,
-        private telegramService: TelegramService,
-        private undeliveredOrderService?: ShiprocketUndeliveredOrderService,
-        options?: ReportingOptions
-    ) {
+    constructor(private shiprocketService: ShiprocketService, private telegramService: TelegramService, private undeliveredOrderService?: ShiprocketUndeliveredOrderService, options?: ReportingOptions) {
         this.timezone = options?.timezone || 'Asia/Kolkata'
         this.dailyLookbackDays = options?.dailyLookbackDays || 1
         this.weeklyLookbackDays = options?.weeklyLookbackDays || 7
@@ -68,8 +63,7 @@ export class ReportingService {
         end.setHours(23, 59, 59, 999)
 
         const start = new Date(end)
-        const lookback =
-            period === 'daily' ? this.dailyLookbackDays : period === 'weekly' ? this.weeklyLookbackDays : this.monthlyLookbackDays
+        const lookback = period === 'daily' ? this.dailyLookbackDays : period === 'weekly' ? this.weeklyLookbackDays : this.monthlyLookbackDays
         start.setDate(end.getDate() - (lookback - 1))
         start.setHours(0, 0, 0, 0)
 
@@ -128,10 +122,7 @@ export class ReportingService {
         return metrics
     }
 
-    async notifyUndeliveredOrders(
-        orders: ShiprocketOrder[],
-        sender?: (message: { text: string; parse_mode: 'HTML'; reply_markup?: any }) => Promise<any>
-    ): Promise<void> {
+    async notifyUndeliveredOrders(orders: ShiprocketOrder[], sender?: (message: { text: string; parse_mode: 'HTML'; reply_markup?: any }) => Promise<any>): Promise<void> {
         const undelivered = orders.filter(order => {
             const statusText = (order.status || '').toString().toUpperCase()
             const statusCode = this.normalizeStatusCode(order.status_code)
@@ -140,12 +131,8 @@ export class ReportingService {
 
         for (const order of undelivered) {
             try {
-                const record = this.undeliveredOrderService
-                    ? await this.undeliveredOrderService.upsertFromShiprocketOrder(order)
-                    : undefined
-                const message = record
-                    ? this.undeliveredOrderService!.formatMessage(record)
-                    : this.formatUndeliveredOrderMessage(order)
+                const record = this.undeliveredOrderService ? await this.undeliveredOrderService.upsertFromShiprocketOrder(order) : undefined
+                const message = record ? this.undeliveredOrderService!.formatMessage(record) : this.formatUndeliveredOrderMessage(order)
                 const sent = sender ? await sender(message) : await this.telegramService.sendMessage(message)
                 const messageId = (sent as any)?.message_id
                 if (this.undeliveredOrderService && messageId) {
@@ -180,59 +167,24 @@ export class ReportingService {
     }
 
     private isCancelledStatus(status: string, statusCode?: number): boolean {
-        return (
-            ReportingService.CANCELLED_CODES.has(statusCode ?? -1) ||
-            status.includes('CANCELLED') ||
-            status.includes('CANCELED') ||
-            status.includes('CANCELLATION REQUESTED')
-        )
+        return ReportingService.CANCELLED_CODES.has(statusCode ?? -1) || status.includes('CANCELLED') || status.includes('CANCELED') || status.includes('CANCELLATION REQUESTED')
     }
 
     private isDeliveredStatus(status: string, statusCode?: number): boolean {
         // Avoid counting undelivered variants as delivered
-        return (
-            ReportingService.DELIVERED_CODES.has(statusCode ?? -1) ||
-            status === 'DELIVERED' ||
-            status.includes(' DELIVERED') ||
-            status === 'ORDER DELIVERED' ||
-            status.includes('PARTIAL DELIVERED')
-        )
+        return ReportingService.DELIVERED_CODES.has(statusCode ?? -1) || status === 'DELIVERED' || status.includes(' DELIVERED') || status === 'ORDER DELIVERED' || status.includes('PARTIAL DELIVERED')
     }
 
     private isUndeliveredStatus(status: string, statusCode?: number): boolean {
-        return (
-            ReportingService.UNDELIVERED_CODES.has(statusCode ?? -1) ||
-            status.includes('UNDELIVERED') ||
-            status.includes('NOT DELIVERED') ||
-            status.includes('FAILED DELIVERY') ||
-            status.includes('UNTRACEABLE') ||
-            status.includes('ISSUE_RELATED_TO_THE_RECIPIENT')
-        )
+        return ReportingService.UNDELIVERED_CODES.has(statusCode ?? -1) || status.includes('UNDELIVERED') || status.includes('NOT DELIVERED') || status.includes('FAILED DELIVERY') || status.includes('UNTRACEABLE') || status.includes('ISSUE_RELATED_TO_THE_RECIPIENT')
     }
 
     private isInTransitStatus(status: string, statusCode?: number): boolean {
-        return (
-            ReportingService.IN_TRANSIT_CODES.has(statusCode ?? -1) ||
-            status.includes('TRANSIT') ||
-            status.includes('IN TRANSIT') ||
-            status.includes('OUT FOR DELIVERY') ||
-            status.includes('OUT FOR PICKUP') ||
-            status.includes('SHIPPED') ||
-            status.includes('PICKUP') ||
-            status.includes('QUEUED') ||
-            status.includes('ALLOCATED') ||
-            status.includes('SCHEDULED') ||
-            status.includes('PACKED') ||
-            status.includes('MANIFEST')
-        )
+        return ReportingService.IN_TRANSIT_CODES.has(statusCode ?? -1) || status.includes('TRANSIT') || status.includes('IN TRANSIT') || status.includes('OUT FOR DELIVERY') || status.includes('OUT FOR PICKUP') || status.includes('SHIPPED') || status.includes('PICKUP') || status.includes('QUEUED') || status.includes('ALLOCATED') || status.includes('SCHEDULED') || status.includes('PACKED') || status.includes('MANIFEST')
     }
 
     private isReturnStatus(status: string, statusCode?: number): boolean {
-        return (
-            ReportingService.RETURN_CODES.has(statusCode ?? -1) ||
-            status.includes('RETURN') ||
-            status.includes('RTO')
-        )
+        return ReportingService.RETURN_CODES.has(statusCode ?? -1) || status.includes('RETURN') || status.includes('RTO')
     }
 
     private formatMessage(period: ReportPeriod, start: Date, end: Date, metrics: IOrderSummaryMetrics): string {
@@ -277,15 +229,7 @@ export class ReportingService {
         const addressBlock = this.formatAddress(order as any)
         const itemsBlock = this.formatProducts((order as any).products)
 
-        const lines = [
-            `<b>🚨 Undelivered Order</b>`,
-            `Order: ${orderCode}`,
-            `Status: ${statusText}${statusCode ? ` (code ${statusCode})` : ''}`,
-            `\n<b>👤 Customer</b>`,
-            `${(order as any).customer_name || 'N/A'}`,
-            (order as any).customer_email ? `${(order as any).customer_email}` : '',
-            phoneFormatted ? `+${phoneFormatted}` : '',
-        ].filter(Boolean)
+        const lines = [`<b>🚨 Undelivered Order</b>`, `Order: ${orderCode}`, `Status: ${statusText}${statusCode ? ` (code ${statusCode})` : ''}`, `\n<b>👤 Customer</b>`, `${(order as any).customer_name || 'N/A'}`, (order as any).customer_email ? `${(order as any).customer_email}` : '', phoneFormatted ? `+${phoneFormatted}` : ''].filter(Boolean)
 
         if ((order as any).pickup_location || addressBlock) {
             lines.push(`\n<b>📦 Shipping Address</b>`)
@@ -420,9 +364,7 @@ export class ReportingScheduler {
         this.tasks.forEach(task => task.stop())
         this.tasks = []
 
-        this.tasks.push(
-            cron.schedule(this.toCronExpression(this.dailyTime), () => this.runSafely('daily'), { timezone: this.timezone })
-        )
+        this.tasks.push(cron.schedule(this.toCronExpression(this.dailyTime), () => this.runSafely('daily'), { timezone: this.timezone }))
 
         this.tasks.push(
             cron.schedule(this.toCronExpression(this.weeklyTime, undefined, this.weeklyDay), () => this.runSafely('weekly'), {
@@ -436,9 +378,7 @@ export class ReportingScheduler {
             })
         )
 
-        console.log(
-            `• Shiprocket reporting scheduler started (daily ${this.dailyTime}, weekly day ${this.weeklyDay} @ ${this.weeklyTime}, monthly day ${this.monthlyDay} @ ${this.monthlyTime}, tz ${this.timezone})`
-        )
+        console.log(`• Shiprocket reporting scheduler started (daily ${this.dailyTime}, weekly day ${this.weeklyDay} @ ${this.weeklyTime}, monthly day ${this.monthlyDay} @ ${this.monthlyTime}, tz ${this.timezone})`)
     }
 
     stop(): void {
